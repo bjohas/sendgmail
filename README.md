@@ -19,7 +19,9 @@ Attachments:
 python3 sendgmail.py --attach file.pdf [file.pdf] 
 ```
 
-Credentials: Most either be included on the command line:
+#Credentials
+
+Most either be included on the command line:
 ```
 python3 sendgmail.py --credentials credentials.json --token token.pickle
 ```
@@ -28,6 +30,8 @@ or must be in files credentials.json/token.pickle in the current directory or mu
 $HOME/.config/sendgmail/credentials.json
 $HOME/.config/sendgmail/token.pickle
 ```
+Command line takes highest precedence, `$HOME/.config/sendgmail` takes lowest precedence.
+
 # Configuration
 Saved configuration: Can be included on the command line
 ```
