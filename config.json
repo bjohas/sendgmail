@@ -1,6 +1,6 @@
 {
-  "to": "d19123597@mytudublin.ie",
-  "sender": "ag15081993@gmail.com",
+  "to": "****",
+  "sender": "*****",
   "subject": "config subject",
   "attach": ["test.txt", "test copy.txt"],
   "message": "some text",
