@@ -83,8 +83,7 @@ def create_draft(service, user_id, message_body):
         return None
 
 
-def create_message_with_attachment(
-        sender, to, cc, bcc, subject, message_text, files):
+def create_message_with_attachment(sender, to, cc, bcc, subject, message_text, files):
     """Create a message for an email.
 
     Args:
@@ -242,34 +241,39 @@ args = parser.parse_args()
 
 # configuration is given a higher priority then command line
 # this can be changed if needed
-configuration = args.configuration
-configType = 0
-configPath = ""
 
-if configuration:
-    configType = 1 # config provided via args
-else:
-    if os.path.exists('config.json'):
-        configType = 1 # config file in same directory
-        configuration = 'config.json'
+def locateFile(name,args):
+    configType = 0
+    configPath = ""
+    configuration = None
+    if name in vars(args):
+        configuration = getattr(args, name)
+        configType = 1 # config provided via args
     else:
-        if 'sender' in vars(args):
-            fallback_config_2 = os.path.join(os.environ['HOME'], '.config', 'sendgmail', args.sender, 'config.json')
-            if os.path.exists(fallback_config_2):            
-                configType = 2 # config file via via args.sender (more specific)
-                configPath = os.path.join(os.environ['HOME'], '.config', 'sendgmail', args.sender)
-                configuration = fallback_config_2
-            else:
-                fallback_config_3 = os.path.join(os.environ['HOME'], '.config', 'sendgmail', 'config.json')
+        if os.path.exists(name):
+            configType = 1 # config file in same directory
+            configuration = name
+        else:
+            if 'sender' in vars(args):
+                fallback_config_2 = os.path.join(os.environ['HOME'], '.config', 'sendgmail', args.sender, name)
+                if os.path.exists(fallback_config_2):            
+                    configType = 2 # config file via via args.sender (more specific)
+                    configPath = os.path.join(os.environ['HOME'], '.config', 'sendgmail', args.sender)
+                    configuration = fallback_config_2
+            if not configuration and not 'sender' in vars(args):
+                fallback_config_3 = os.path.join(os.environ['HOME'], '.config', 'sendgmail', name)
                 if os.path.exists(fallback_config_3):
                     configType = 3 # config file (generic)
                     configPath = os.path.join(os.environ['HOME'], '.config', 'sendgmail')
                     configuration = fallback_config_3
-
+    return configType, configPath, configuration 
+                    
+configType, configPath, configuration = locateFile('config.json',args)
 if configuration:
     print("Using configuration method "+ str(configType) +" -> "+configuration)
 
-def locateFile(mykey, args, config):
+    
+def locateFileByKey(mykey, args, config):
     # Figure out credentials
     locatedType = 0
     locatedFile = ""
@@ -300,27 +304,44 @@ def locateFile(mykey, args, config):
                         locatedFile = test
     return locatedType,locatedFile
 
-
-
+def getConfigIfNeeded(mykey, args, config):
+    if mykey in vars(args) and getattr(args, mykey) != None:
+        return getattr(args, mykey)
+    elif mykey in config:
+        return config[mykey]
+    else:
+        return None
+    
 # Use the configuration file (if provided, if in same dir, or if in default place)
 if configuration:
     with open(configuration, 'r') as f:
         config = json.load(f)
-        credType, args.credentials = locateFile('credentials', args, config)
-        tokenType, args.token = locateFile('token', args, config)
+        credType, args.credentials = locateFileByKey('credentials', args, config)
+        tokenType, args.token = locateFileByKey('token', args, config)
         print("Using credentials: "+ str(credType) + ": "+ str(args.credentials))
         print("Using token:       "+ str(tokenType) + ": "+ str(args.token))
         # args.to = config['to'] if 'to' in config else args.to
-        if not 'to' in args and 'to' in config:
-            args.to = config['to']
-        args.sender = config['sender'] if 'sender' in config else args.sender
-        args.cc = config['cc'] if 'cc' in config else args.cc
-        args.bcc = config['bcc'] if 'bcc' in config else args.bcc
-        args.subject = config['subject'] if 'subject' in config else args.subject
-        args.message = config['message'] if 'message' in config else args.message
+        #if not 'to' in vars(args) and 'to' in config:
+        #    args.to = config['to']
+        args.to = getConfigIfNeeded('to', args, config)
+        #args.sender = config['sender'] if 'sender' in config else args.sender
+        args.sender = getConfigIfNeeded('sender', args, config)
+        #args.cc = config['cc'] if 'cc' in config else args.cc
+        args.cc = getConfigIfNeeded('cc', args, config)
+        #args.bcc = config['bcc'] if 'bcc' in config else args.bcc
+        args.bcc = getConfigIfNeeded('bcc', args, config)
+        #args.subject = config['subject'] if 'subject' in config else args.subject
+        args.subject = getConfigIfNeeded('subject', args, config)
+        #args.message = config['message'] if 'message' in config else args.message
+        args.message = getConfigIfNeeded('message', args, config)
         args.file = config['file'] if 'file' in config else args.file
         args.attach = config['attach'] if 'attach' in config else args.attach
-        
+else:
+    tT,tP,args.token = locateFile('token.pickle',args)
+    cT,cP,args.credentials = locateFile('credentials.json',args)
+    print("token "+ str(tT) +" -> "+str(args.token))
+    print("creds "+ str(cT) +" -> "+str(args.credentials))
+    
 if not args.to or not args.sender or not args.subject or not args.message or not args.token or not args.credentials:
     parser.print_help()
     sys.exit(1)

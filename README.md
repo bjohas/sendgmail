@@ -3,10 +3,10 @@ Send gmail form the commandline
 
 Basic options: to/from/cc/bcc/subject:
 ```
-python3 sendgmail.py --to "..." --from "..." --cc "..." --bcc "..." --subject "..." 
+python3 sendgmail.py --to "..." --from "..." --cc "..." --bcc "..." --subject "..." --message "..."
 ```
 
-Message:
+Message options:
 ```
 python3 sendgmail.py --message "..." 
 python3 sendgmail.py --file message.txt
@@ -19,28 +19,24 @@ Attachments:
 python3 sendgmail.py --attach file.pdf [file.pdf] 
 ```
 
-#Credentials
-
-Most either be included on the command line:
-```
-python3 sendgmail.py --credentials credentials.json --token token.pickle
-```
-or must be in files credentials.json/token.pickle in the current directory or must be be in 
-```
-$HOME/.config/sendgmail/credentials.json
-$HOME/.config/sendgmail/token.pickle
-```
-Command line takes highest precedence, `$HOME/.config/sendgmail` takes lowest precedence.
-
 # Configuration
-Saved configuration: Can be included on the command line
+
+Saved configuration: Can be included (1) on the command line
 ```
 python3 sendgmail.py --configuration config.json
 ```
-or be in a file config.json in the current directory or be in 
+or (2) be in a file config.json in the current directory.
+
+If those are not the case, but `--sender ABC@DEF` is specified then (3)
+```
+$HOME/.config/sendgmail/ABC@DEF/config.json
+```
+is checked. Finally, (4)
 ```
 $HOME/.config/sendgmail/config.json
 ```
+is checked.
+
 The config file looks like
 ```
 {
@@ -56,13 +52,37 @@ The config file looks like
 "token": "token.pickle"
 }
 ```
-Note that all files (...pdf, textfile.txt, credentials, token) are relative to the config file, unless you use `./`
+Note that all credentials and token files are relative to the config file, unless you use `./` or '/', i.e.,
 ```
 {
-...
-"attach": [ "./...pdf", "./...jpg", ...],
-"file": "./textfile.txt",
 "credentials": "./credentials.json",
 "token": "./token.pickle"
 }
 ```
+or
+```
+{
+"credentials": "/home/user/somewhere/credentials.json",
+"token": "/home/user/somewhere/token.pickle"
+}
+```
+
+#Credentials / token
+
+Most (1) either be included on the command line:
+```
+python3 sendgmail.py --credentials credentials.json --token token.pickle
+```
+or (2) must be in files credentials.json/token.pickle in the current directory or (3) must be specified in the config file (see above).
+
+If none of these, then if `--sender ABC@DEF`, then (4)
+```
+$HOME/.config/sendgmail/ABC@DEF/credentials.json
+$HOME/.config/sendgmail/ABC@DEF/token.pickle
+```
+is checked and finally (5)
+```
+$HOME/.config/sendgmail/credentials.json
+$HOME/.config/sendgmail/token.pickle
+```
+is checked. I.e., command line takes highest precedence, `$HOME/.config/sendgmail` takes lowest precedence.
