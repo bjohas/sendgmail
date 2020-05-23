@@ -348,8 +348,8 @@ if not( args.token ) or not( args.credentials ):
     parser.print_help()
     sys.exit(1)
 
-if not args.to or not args.sender or not args.subject or not args.message:
-    print("You must provide to/sender/subject/message")
+if not args.to or not args.sender or not args.subject or not (args.message or args.file):
+    print("You must provide to/sender/subject and also message or file")
     parser.print_help()
     sys.exit(1)
 
