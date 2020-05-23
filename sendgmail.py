@@ -341,10 +341,18 @@ else:
     cT,cP,args.credentials = locateFile('credentials.json',args)
     print("token "+ str(tT) +" -> "+str(args.token))
     print("creds "+ str(cT) +" -> "+str(args.credentials))
-    
-if not args.to or not args.sender or not args.subject or not args.message or not args.token or not args.credentials:
+
+# This needs fixing still: credentials is sufficient, but a token file must be avaialble (even if empty)
+if not( args.token ) or not( args.credentials ):
+    print("You must provide credentials/token")
     parser.print_help()
     sys.exit(1)
 
+if not args.to or not args.sender or not args.subject or not args.message:
+    print("You must provide to/sender/subject/message")
+    parser.print_help()
+    sys.exit(1)
+
+    
 if __name__ == '__main__':
     main(args)

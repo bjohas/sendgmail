@@ -6,4 +6,5 @@
   "message": "some text",
   "file": "message.txt",
   "credentials": "credentials.json"
+  "token": "token.pickle"
 }
