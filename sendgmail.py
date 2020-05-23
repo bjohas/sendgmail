@@ -20,6 +20,7 @@ from apiclient import errors
 
 from sys import stdin
 from sys import argv
+import sys
 
 import argparse
 
@@ -272,6 +273,10 @@ if configuration:
         args.credentials = config['credentials'] if 'credentials' in config else args.credentials
         args.token = config['token'] if 'token' in config else args.token
         args.attach = config['attach'] if 'attach' in config else args.attach
+
+if not args.to or not args.sender or not args.subject or not args.message:
+    parser.print_help()
+    sys.exit(1)
 
 if __name__ == '__main__':
     main(args)
