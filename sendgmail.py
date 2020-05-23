@@ -23,6 +23,7 @@ from sys import argv
 import sys
 
 import argparse
+import re
 
 """Send an email message from the user's account.
 """
@@ -171,18 +172,7 @@ def main(args):
     # created automatically when the authorization flow completes for the first
     # time.
     credentialsjson = args.credentials
-    if not credentialsjson and os.path.exists('./credentials.json'):
-        credentialsjson = './credentials.json'
-    else:
-        credentialsjson = os.path.join(
-            os.environ['HOME'], '.config', 'sendgmail', 'credentials.json')
-
     tokenpickle = args.token
-    if not tokenpickle and os.path.exists('./token.pickle'):
-        tokenpickle = './token.pickle'
-    else:
-        tokenpickle = os.path.join(
-            os.environ['HOME'], '.config', 'sendgmail', 'token.pickle')
 
     if os.path.exists(tokenpickle):
         with open(tokenpickle, 'rb') as token:
@@ -247,34 +237,91 @@ parser.add_argument('--attach', nargs='*')
 parser.add_argument('--configuration', action='store')
 
 args = parser.parse_args()
+#for arg in vars(args):
+#    print(arg, getattr(args, arg))
 
 # configuration is given a higher priority then command line
 # this can be changed if needed
 configuration = args.configuration
-fallback_config = os.path.join(
-    os.environ['HOME'], '.config', 'sendgmail', 'config.json')
+configType = 0
+configPath = ""
 
-if not configuration:
+if configuration:
+    configType = 1 # config provided via args
+else:
     if os.path.exists('config.json'):
+        configType = 1 # config file in same directory
         configuration = 'config.json'
-    elif os.path.exists(fallback_config):
-        configuration = fallback_config
+    else:
+        if 'sender' in vars(args):
+            fallback_config_2 = os.path.join(os.environ['HOME'], '.config', 'sendgmail', args.sender, 'config.json')
+            if os.path.exists(fallback_config_2):            
+                configType = 2 # config file via via args.sender (more specific)
+                configPath = os.path.join(os.environ['HOME'], '.config', 'sendgmail', args.sender)
+                configuration = fallback_config_2
+            else:
+                fallback_config_3 = os.path.join(os.environ['HOME'], '.config', 'sendgmail', 'config.json')
+                if os.path.exists(fallback_config_3):
+                    configType = 3 # config file (generic)
+                    configPath = os.path.join(os.environ['HOME'], '.config', 'sendgmail')
+                    configuration = fallback_config_3
 
+if configuration:
+    print("Using configuration method "+ str(configType) +" -> "+configuration)
+
+def locateFile(mykey, args, config):
+    # Figure out credentials
+    locatedType = 0
+    locatedFile = ""
+    if mykey in vars(args) and getattr(args, mykey) != None:
+        locatedType = 1 # provided in args
+        locatedFile = getattr(args, mykey)
+    else:
+        test = mykey+'.json'
+        if os.path.exists(test):
+            locatedType = 2 # credentials file exists locally (overrides config)
+            locatedFile = test
+        else:
+            if mykey in config:
+                if re.search("^\w",config[mykey]) and configPath != "":
+                    config[mykey] = os.path.join(configPath, config[mykey])
+            if mykey in config and os.path.exists(config[mykey]):
+                locatedType = 3 # credentials provided in config - overrides direct credentials files
+                locatedFile = config[mykey];
+            else: 
+                test = os.path.join(os.environ['HOME'], '.config', 'sendgmail', args.sender,  mykey+'.json')
+                if os.path.exists(test):
+                    locatedType = 4 # credentials provided via more specific dir
+                    locatedFile = test
+                else:
+                    test = os.path.join(os.environ['HOME'], '.config', 'sendgmail',  mykey+'.json')
+                    if os.path.exists(test):
+                        locatedType = 5 # credentials provided less specific dir
+                        locatedFile = test
+    return locatedType,locatedFile
+
+
+
+# Use the configuration file (if provided, if in same dir, or if in default place)
 if configuration:
     with open(configuration, 'r') as f:
         config = json.load(f)
-        args.to = config['to'] if 'to' in config else args.to
+        credType, args.credentials = locateFile('credentials', args, config)
+        tokenType, args.token = locateFile('token', args, config)
+        print("Using credentials: "+ str(credType) + ": "+ str(args.credentials))
+        print("Using token:       "+ str(tokenType) + ": "+ str(args.token))
+        # args.to = config['to'] if 'to' in config else args.to
+        if not 'to' in args and 'to' in config:
+            args.to = config['to']
         args.sender = config['sender'] if 'sender' in config else args.sender
         args.cc = config['cc'] if 'cc' in config else args.cc
         args.bcc = config['bcc'] if 'bcc' in config else args.bcc
         args.subject = config['subject'] if 'subject' in config else args.subject
         args.message = config['message'] if 'message' in config else args.message
         args.file = config['file'] if 'file' in config else args.file
-        args.credentials = config['credentials'] if 'credentials' in config else args.credentials
-        args.token = config['token'] if 'token' in config else args.token
         args.attach = config['attach'] if 'attach' in config else args.attach
-
-if not args.to or not args.sender or not args.subject or not args.message:
+        
+if not args.to or not args.sender or not args.subject or not args.message or not args.token or not args.credentials:
     parser.print_help()
     sys.exit(1)
 
