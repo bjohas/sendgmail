@@ -193,20 +193,22 @@ def main(args):
     service = build('gmail', 'v1', credentials=creds)
 
     # Call the Gmail API
-    results = service.users().labels().list(userId='me').execute()
-    labels = results.get('labels', [])
+    #results = service.users().labels().list(userId='me').execute()
+    #labels = results.get('labels', [])
 
+    mtext = ""
     mtext = args.message
     if args.mfile:
         if args.mfile != '-':
             with open(args.mfile, 'r') as f:
                 mtext = mtext + f.read()
-        else:
-            if stdin:
-                mtext = ''
-                for line in stdin:
-                    mtext = mtext + line
-                    
+
+    if args.mfile == '-' or (args.mfile == None and args.message == None):
+        print("Reading from STDIN")
+        if stdin:
+            for line in stdin:
+                mtext = mtext + line
+                
     if args.sfile:
         with open(args.sfile, 'r') as f:
             mtext = mtext + f.read()
@@ -355,9 +357,6 @@ else:
     cT,cP,args.credentials = locateFile('credentials.json',args)
     print("token "+ str(tT) +" -> "+str(args.token))
     print("creds "+ str(cT) +" -> "+str(args.credentials))
-
-if not(args.mfile) and not(args.message):
-    args.message = ''
     
 # This needs fixing still: credentials is sufficient, but a token file must be avaialble (even if empty)
 if not( args.token ) or not( args.credentials ):
