@@ -1,29 +1,34 @@
 # sendgmail
 Send gmail form the commandline
 
-Basic options: to/from/cc/bcc/subject:
+Basic options: to/sender/cc/bcc/subject. The following sends an empty message:
 ```
-python3 sendgmail.py --to "..." --from "..." --cc "..." --bcc "..." --subject "..." --message "..."
+sendgmail.py --sender "..." --to "..."  --cc "..." --bcc "..." --subject "..."
 ```
+In the above `sender` is a single email address, while `to`, `cc` and `bcc` are comma-separated lists of email addresses.
 
 Message options:
 ```
-python3 sendgmail.py --message "..." 
-python3 sendgmail.py --file message.txt
-cat message.txt | python3 sendgmail.py
+sendgmail.py --message "..." 
+sendgmail.py --mfile message.txt
+cat message.txt | sendgmail.py --mfile -
 ```
-If all three options are present, they are processed in the way shown above.
+If the first options is used with the others, they are processed in the above order. You can add another file as a signature:
+```
+sendgmail.py --sfile signature.txt
+```
+This is helpful if you are using the configuration below, and you want `sendgmail.py` to handle the signature. However, it has the same effect as adding extra text via `--mfile`.
 
 Attachments:
 ```
-python3 sendgmail.py --attach file.pdf [file.pdf] 
+sendgmail.py --attach file.pdf [file.pdf] 
 ```
 
 # Configuration
 
 Saved configuration: Can be included (1) on the command line
 ```
-python3 sendgmail.py --configuration config.json
+sendgmail.py --configuration config.json
 ```
 or (2) be in a file config.json in the current directory.
 
@@ -47,7 +52,8 @@ The config file looks like
 "subject": "...",
 "attach": [ "...pdf", "...jpg", ...],
 "message": "some text",
-"file": "textfile.txt",
+"mfile": "message.txt",
+"sfile": "signature.txt",
 "credentials": "credentials.json",
 "token": "token.pickle"
 }
