@@ -197,16 +197,20 @@ def main(args):
     labels = results.get('labels', [])
 
     mtext = args.message
-    if args.file:
-        with open(args.file, 'r') as f:
-            mtext = f.read()
-
-    # This is not trivial to detect if data is coming from pipe
-    # if stdin:
-    #     mtext = ''
-    #     for line in stdin:
-    #         mtext = mtext + line
-
+    if args.mfile:
+        if args.mfile != '-':
+            with open(args.mfile, 'r') as f:
+                mtext = mtext + f.read()
+        else:
+            if stdin:
+                mtext = ''
+                for line in stdin:
+                    mtext = mtext + line
+                    
+    if args.sfile:
+        with open(args.sfile, 'r') as f:
+            mtext = mtext + f.read()
+    
     subject = args.subject
     to = args.to
     send_from = args.sender
@@ -336,7 +340,10 @@ if configuration:
         args.subject = getConfigIfNeeded('subject', args, config)
         #args.message = config['message'] if 'message' in config else args.message
         args.message = getConfigIfNeeded('message', args, config)
-        args.file = config['file'] if 'file' in config else args.file
+        #args.mfile = config['mfile'] if 'file' in config else args.file
+        args.mfile = getConfigIfNeeded('mfile', args, config)
+        #args.sfile = config['mfile'] if 'file' in config else args.file
+        args.sfile = getConfigIfNeeded('sfile', args, config)
         args.attach = config['attach'] if 'attach' in config else args.attach
 else:
     tT,tP,args.token = locateFile('token.pickle',args)
@@ -344,14 +351,17 @@ else:
     print("token "+ str(tT) +" -> "+str(args.token))
     print("creds "+ str(cT) +" -> "+str(args.credentials))
 
+if not(args.mfile) and not(args.message):
+    args.message = ''
+    
 # This needs fixing still: credentials is sufficient, but a token file must be avaialble (even if empty)
 if not( args.token ) or not( args.credentials ):
     print("You must provide credentials/token")
     parser.print_help()
     sys.exit(1)
 
-if not args.to or not args.sender or not args.subject or not (args.message or args.file):
-    print("You must provide to/sender/subject and also message or file")
+if not args.to or not args.sender or not args.subject:
+    print("You must provide to/sender/subject")
     parser.print_help()
     sys.exit(1)
 
