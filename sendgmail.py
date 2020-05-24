@@ -227,10 +227,10 @@ def main(args):
 
 
 parser = argparse.ArgumentParser(description='Send gmail command line utility')
-parser.add_argument('--to', action='store')
-parser.add_argument('--sender', action='store')
-parser.add_argument('--cc', action='store')
-parser.add_argument('--bcc', action='store')
+parser.add_argument('--to', action='store',help='To:-field. A comma separated list of email addresses.')
+parser.add_argument('--sender', action='store',help='A single email address: The sender.')
+parser.add_argument('--cc', action='store',help='CC:-field. A comma separated list of emails.')
+parser.add_argument('--bcc', action='store',help='BCC:-field. A comma separated list of emails.')
 parser.add_argument('--subject', action='store',help='Subject provided as string on command line')
 parser.add_argument('--message', action='store',help='Message body provided as string on command line')
 parser.add_argument('--mfile', action='store',help='A file with the message body.')
@@ -239,7 +239,6 @@ parser.add_argument('--attach', nargs='*',help='A list of attachments.')
 parser.add_argument('--credentials', action='store',help='Credentials file.')
 parser.add_argument('--token', action='store',help='The token file.')
 parser.add_argument('--configuration', action='store',help='Configuration file.')
-
 
 args = parser.parse_args()
 #for arg in vars(args):
@@ -260,13 +259,19 @@ def locateFile(name,args):
             configType = 1 # config file in same directory
             configuration = name
         else:
-            if 'sender' in vars(args):
+            senderavailable = True
+            if 'sender' in vars(args) and getattr(args, 'sender') != None:
+                senderavailable = True
+            else:
+                senderavailable = False
+            if senderavailable:
                 fallback_config_2 = os.path.join(os.environ['HOME'], '.config', 'sendgmail', args.sender, name)
                 if os.path.exists(fallback_config_2):            
                     configType = 2 # config file via via args.sender (more specific)
                     configPath = os.path.join(os.environ['HOME'], '.config', 'sendgmail', args.sender)
                     configuration = fallback_config_2
-            if not configuration and not 'sender' in vars(args):
+                    sendavailable = True
+            if not senderavailable:
                 fallback_config_3 = os.path.join(os.environ['HOME'], '.config', 'sendgmail', name)
                 if os.path.exists(fallback_config_3):
                     configType = 3 # config file (generic)
