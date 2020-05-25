@@ -197,7 +197,9 @@ def main(args):
     #labels = results.get('labels', [])
 
     mtext = ""
-    mtext = args.message
+    if args.message != None:
+        mtext = args.message
+
     if args.mfile:
         if args.mfile != '-':
             with open(args.mfile, 'r') as f:

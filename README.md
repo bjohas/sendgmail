@@ -1,9 +1,9 @@
 # sendgmail
 Send gmail form the commandline
 
-Basic options: to/sender/cc/bcc/subject. The following sends an empty message:
+Basic options: to/sender/cc/bcc/subject. The following sends an basic message:
 ```
-sendgmail.py --sender "..." --to "..."  --cc "..." --bcc "..." --subject "..."
+sendgmail.py --sender "..." --to "..."  --cc "..." --bcc "..." --subject "..." --message "message:
 ```
 In the above `sender` is a single email address, while `to`, `cc` and `bcc` are comma-separated lists of email addresses.
 
@@ -12,8 +12,11 @@ Message options:
 sendgmail.py --message "..." 
 sendgmail.py --mfile message.txt
 cat message.txt | sendgmail.py --mfile -
+cat message.txt | sendgmail.py [without --mfile or --message specfied]
 ```
-If the first options is used with the others, they are processed in the above order. You can add another file as a signature:
+If the first option is used with the others, they are processed in the above order. Note that you can send an empty message using `--message ""`.
+
+You can add another file as a signature:
 ```
 sendgmail.py --sfile signature.txt
 ```
