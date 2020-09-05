@@ -164,7 +164,6 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly',
 
 def main(args):
     """Shows basic usage of the Gmail API.
-    Lists the user's Gmail labels.
     """
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
@@ -230,24 +229,6 @@ def main(args):
     send_message(service, send_from, mymessage)
 
 
-parser = argparse.ArgumentParser(description='Send gmail command line utility')
-parser.add_argument('--to', action='store',help='To:-field. A comma separated list of email addresses.')
-parser.add_argument('--sender', action='store',help='A single email address: The sender.')
-parser.add_argument('--cc', action='store',help='CC:-field. A comma separated list of emails.')
-parser.add_argument('--bcc', action='store',help='BCC:-field. A comma separated list of emails.')
-parser.add_argument('--subject', action='store',help='Subject provided as string on command line')
-parser.add_argument('--message', action='store',help='Message body provided as string on command line')
-parser.add_argument('--mfile', action='store',help='A file with the message body.')
-parser.add_argument('--sfile', action='store',help='A file with a signature. Will be appended to message.')
-parser.add_argument('--attach', nargs='*',help='A list of attachments.')
-parser.add_argument('--credentials', action='store',help='Credentials file.')
-parser.add_argument('--token', action='store',help='The token file.')
-parser.add_argument('--configuration', action='store',help='Configuration file.')
-
-args = parser.parse_args()
-#for arg in vars(args):
-#    print(arg, getattr(args, arg))
-
 # configuration is given a higher priority then command line
 # this can be changed if needed
 
@@ -282,12 +263,7 @@ def locateFile(name,args):
                     configPath = os.path.join(os.environ['HOME'], '.config', 'sendgmail')
                     configuration = fallback_config_3
     return configType, configPath, configuration 
-                    
-configType, configPath, configuration = locateFile('config.json',args)
-if configuration:
-    print("Using configuration method "+ str(configType) +" -> "+configuration)
-
-    
+                        
 def locateFileByKey(mykey, args, config):
     # Figure out credentials
     locatedType = 0
@@ -326,7 +302,98 @@ def getConfigIfNeeded(mykey, args, config):
         return config[mykey]
     else:
         return None
-    
+
+# MAIN PROGRAMME LOOP    
+# Get arguments.
+parser = argparse.ArgumentParser(description='Send gmail command line utility')
+parser.add_argument('--to', action='store',help='To:-field. A comma separated list of email addresses.')
+parser.add_argument('--sender', action='store',help='A single email address: The sender.')
+parser.add_argument('--cc', action='store',help='CC:-field. A comma separated list of emails.')
+parser.add_argument('--bcc', action='store',help='BCC:-field. A comma separated list of emails.')
+parser.add_argument('--subject', action='store',help='Subject provided as string on command line')
+parser.add_argument('--message', action='store',help='Message body provided as string on command line')
+parser.add_argument('--mfile', action='store',help='A file with the message body.')
+parser.add_argument('--sfile', action='store',help='A file with a signature. Will be appended to message.')
+parser.add_argument('--attach', nargs='*',help='A list of attachments.')
+parser.add_argument('--credentials', action='store',help='Credentials file.')
+parser.add_argument('--token', action='store',help='The token file.')
+parser.add_argument('--configuration', action='store',help='Configuration file.')
+parser.add_argument('--setup', action='store',help='Set up an email account.')
+
+args = parser.parse_args()
+#for arg in vars(args):
+#    print(arg, getattr(args, arg))
+
+if args.setup:
+    if os.path.exists(args.setup):
+        print("Config file exists")
+        args.configuration = args.setup
+    else:
+        #parser.print_help()
+        if not args.sender:
+            print("At least --sender has to be specified.")
+            sys.exit();
+        with open(args,setup, 'w') as file:
+            file.write("{")
+            file.write("\t\"sender\": \"{}\",".format(args.sender))
+            if args.cc:
+                file.write("\t\"cc\": \"{}\",".format(args.cc))
+            if args.bcc:
+                file.write("\t\"bcc\": \"{}\",".format(args.bcc))
+            if args.subject:
+                file.write("\t\"subject\": \"{}\",".format(args.subject))
+            if args.message:
+                file.write("\t\"message\": \"{}\",".format(args.message))
+            if args.mfile:
+                file.write("\t\"mfile\": \"{}\",".format(args.mfile))
+            if args.sfile:
+                file.write("\t\"sfile\": \"{}\",".format(args.sfile))
+            if args.attach:
+                file.write("\t\"attach\": \"{}\",".format(args.attach))
+            if args.credentials:
+                file.write("\t\"credentials\": \"{}\",".format(args.credentials))
+            else:
+                file.write("\t\"credentials\": \"{}\",")
+            if args.token:
+                file.write("\t\"token\": \"{}\"".format(args.token))
+            else:
+                file.write("\t\"token\": \"{}\"")
+            file.write("}")         
+        print("Configuration created.")
+        sys.exit(1)
+        
+configType, configPath, configuration = locateFile('config.json',args)
+if configuration:
+    print("Using configuration method "+ str(configType) +" -> "+configuration)
+
+if args.setup:
+    print("Setup")
+    with open(args.setup, 'r') as f:
+        config = json.load(f)
+        print(config)
+        creds = None
+        if os.path.exists(config["credentials"]):
+            print("credentials exist - will use them")
+        else:
+            if args.credentials:
+                print("Credentials supplied - moving into place")
+                os.system('mv -i \"{}\" \"{}\"'.format(args.credentials,config["credentials"]))
+            else:
+                print("Credentials NOT supplied - enable API and save credentials file.")
+                print("Setup: Open https://developers.google.com/gmail/api/quickstart/go to enable the client API. Save the file and supply with --credentials")
+                sys.exit(1)
+        # We now have creentials
+        credentialsjson = config["credentials"]
+        tokenpickle = config["token"]
+        flow = InstalledAppFlow.from_client_secrets_file(credentialsjson, SCOPES)
+        creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with open(tokenpickle, 'wb') as token:
+            pickle.dump(creds, token)
+            # ^^^ may need changing.
+    print("Setup complete.")
+    sys.exit(1)
+        
 # Use the configuration file (if provided, if in same dir, or if in default place)
 if configuration:
     with open(configuration, 'r') as f:
