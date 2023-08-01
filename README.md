@@ -1,5 +1,6 @@
 # sendgmail
-Send gmail form the commandline
+
+Send gmail from the commandline
 
 Basic options: to/sender/cc/bcc/subject. The following sends an basic message:
 ```
@@ -76,7 +77,7 @@ or
 }
 ```
 
-#Credentials / token
+# Credentials / token
 
 Most (1) either be included on the command line:
 ```
@@ -95,3 +96,9 @@ $HOME/.config/sendgmail/credentials.json
 $HOME/.config/sendgmail/token.pickle
 ```
 is checked. I.e., command line takes highest precedence, `$HOME/.config/sendgmail` takes lowest precedence.
+
+# Requirements
+```
+pip install google-api-python-client
+pip install google-auth-oauthlib
+```
